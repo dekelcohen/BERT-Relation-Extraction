@@ -9,8 +9,11 @@ import os
 import re
 import random
 import copy
+from collections import Counter
+import unicodedata
 import pandas as pd
 import json
+from unidecode import unidecode
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
@@ -18,10 +21,125 @@ from ..misc import save_as_pickle, load_pickle
 from tqdm import tqdm
 import logging
 
+
 tqdm.pandas(desc="prog_bar")
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger('__file__')
+
+
+def add_entity_markers(row):
+    dct_em = Counter([ item['text'] for item in row.entityMentions ])
+    row.em1Text = unidecode(row.em1Text)
+    row.em2Text = unidecode(row.em2Text)
+    e1_num_occur = dct_em[row.em1Text]
+    e2_num_occur = dct_em[row.em2Text]
+    
+    
+    # filter out samples that have both E1 and E2 > 1 occur - for simplicity - there are only few of them
+    if e1_num_occur > 1 and e2_num_occur > 1:
+        return None
+    
+    # Anchor is the em (1 or 2) that only have 1 occur. The other have >=1. 
+    # Other occur closest to anchor will be selected. Search from anchor, before (rfind) and after and compare distances in chars
+    # If one em contains the other (ex: Lake Washington contains Washington) --> it is also the anchor, to prevent find Washington within Lake Washington
+    if e1_num_occur > 1 or row.em2Text.find(row.em1Text) != -1:
+        anchor = row.em2Text
+        anc_no = 2
+        other = row.em1Text
+        oth_no = 1
+    else:
+        anchor = row.em1Text
+        anc_no = 1
+        other = row.em2Text
+        oth_no = 2
+    
+        
+    row.sents = unidecode(row.sents)
+    idx_anchor = row.sents.find(anchor)
+    # If em text cannot be found - filter sample
+    if  idx_anchor == -1:
+        print(anchor + '****' + row.sents)
+        return None
+    idx_anchor = row.sents.index(anchor)
+    idx_other_before = row.sents.rfind(other,0,idx_anchor)
+    idx_other_after = row.sents.find(other,idx_anchor+len(anchor))
+    if idx_other_before == -1:
+        idx_other = idx_other_after
+    elif idx_other_after == -1:
+        idx_other = idx_other_before
+    else:
+        idx_other = idx_other_before if abs(idx_other_before - idx_anchor) < abs(idx_other_after - idx_anchor) else idx_other_after
+    
+    # If em text cannot be found - filter sample
+    if  idx_other == -1:
+        print(other + '****' + row.sents)
+        return None
+    
+    sent = row.sents
+    def replace_other():        
+        nonlocal sent
+        sent = sent[:idx_other] + f'[E{oth_no}]{other}[/E{oth_no}]' + sent[idx_other+len(other):] 
+    def replace_anchor():
+        nonlocal sent
+        sent = sent[:idx_anchor] + f'[E{anc_no}]{anchor}[/E{anc_no}]' + sent[idx_anchor+len(anchor):] 
+        
+    # Must first add markers to the right most entity - not to push indexes
+    if idx_other > idx_anchor:
+        replace_other()
+        replace_anchor()
+    else:
+        replace_anchor()
+        replace_other()        
+    return sent
+    
+def process_nyt_lines(lines):
+    # TODO: Multi label: Select a single label or create 2 samples (same vec for 2 labels ...)
+    ### TODO:Debug:Remove 
+    # data_path = r'D:\NLP\Relation Extraction\Datasets\New York Times Relation Extraction\valid.json'    
+    
+    lst_dicts = [json.loads(line) for line in lines]
+    df = pd.DataFrame(lst_dicts)
+    df = df.explode('relationMentions')
+    df = pd.concat([df,df.relationMentions.apply(pd.Series)],axis=1).drop(columns='relationMentions')
+    df = df.rename(columns={'sentText' : 'sents','label' : 'relations'})    
+    
+    
+    df['sents'] = df.apply(add_entity_markers, axis=1)
+    df = df[~df.sents.isna()] # filter out samples that have both E1 and E2 > 1 occur - for simplicity - there are only few of them
+        
+    df = df[['sents','relations']].drop_duplicates()
+    return df
+        
+        
+def preprocess_nyt(args):
+    '''
+    Data preprocessing for New York Times Relation extraction dataset
+    '''
+    data_path = args.train_data #'./data/New York Times Relation Extraction/train.json'
+    logger.info("Reading training file %s..." % data_path)
+    with open(data_path, 'r', encoding='utf8') as f:
+        lines = f.readlines()
+    
+    df_train = process_nyt_lines(lines)    
+    
+    data_path = args.test_data #'./data/SemEval2010_task8_all_data/SemEval2010_task8_testing_keys/TEST_FILE_FULL.TXT'
+    logger.info("Reading test file %s..." % data_path)
+    with open(data_path, 'r', encoding='utf8') as f:
+        lines = f.readlines()
+    
+    df_test = process_nyt_lines(lines)    
+    
+    rm = Relations_Mapper(df_train['relations'])
+    save_as_pickle('relations.pkl', rm)
+    df_test['relations_id'] = df_test.progress_apply(lambda x: rm.rel2idx[x['relations']], axis=1)
+    df_train['relations_id'] = df_train.progress_apply(lambda x: rm.rel2idx[x['relations']], axis=1)
+    save_as_pickle('df_train.pkl', df_train)
+    save_as_pickle('df_test.pkl', df_test)
+    logger.info("Finished and saved!")
+    
+    return df_train, df_test, rm
+
 
 def process_text(text, mode='train'):
     sents, relations, comments, blanks = [], [], [], []

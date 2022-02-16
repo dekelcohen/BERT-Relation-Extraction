@@ -441,7 +441,7 @@ def load_dataloaders(args):
     e2_id = tokenizer.convert_tokens_to_ids('[E2]')
     assert e1_id != e2_id != 1
     
-    if args.task == 'semeval':
+    if args.task == 'semeval' or args.task == 'nyt':
         relations_path = './data/relations.pkl'
         train_path = './data/df_train.pkl'
         test_path = './data/df_test.pkl'
@@ -451,7 +451,12 @@ def load_dataloaders(args):
             df_test = load_pickle('df_test.pkl')
             logger.info("Loaded preproccessed data.")
         else:
-            df_train, df_test, rm = preprocess_semeval2010_8(args)
+            if  args.task == 'semeval':
+                df_train, df_test, rm = preprocess_semeval2010_8(args) 
+            elif args.task == 'nyt':
+                df_train, df_test, rm = preprocess_nyt(args) 
+            else:
+                raise Exception(f'No preprocessing code for task: {args.task}')
         
         train_set = semeval_dataset(df_train, tokenizer=tokenizer, e1_id=e1_id, e2_id=e2_id)
         test_set = semeval_dataset(df_test, tokenizer=tokenizer, e1_id=e1_id, e2_id=e2_id)

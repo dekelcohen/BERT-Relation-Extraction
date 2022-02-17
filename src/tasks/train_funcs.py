@@ -93,15 +93,15 @@ def evaluate_results(net, test_loader, pad_id, cuda):
                           e1_e2_start=e1_e2_start)
             
             accuracy, (o, l) = evaluate_(classification_logits, labels, ignore_idx=-1)
-            out_labels.append([str(i) for i in o]); true_labels.append([str(i) for i in l])
+            out_labels+=([str(i) for i in o]); true_labels+=([str(i) for i in l])
             acc += accuracy
     
     accuracy = acc/(i + 1)
     def flatten(lst):
         return [item for sublist in lst for item in sublist]
     
-    print(f"out_labels: {out_labels}")
-    print(f"true_labels: {true_labels}")
+    #print(f"out_labels: {out_labels}")
+    #print(f"true_labels: {true_labels}")
     results = {
         "accuracy": accuracy,
         "set(true labels)-set(test labels)": set(flatten(true_labels)) - set(flatten(out_labels)),

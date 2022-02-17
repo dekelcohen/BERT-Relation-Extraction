@@ -155,6 +155,7 @@ def filter_nyt(df,balance):
         rus = RandomUnderSampler()
         X_resampled, y_resampled = rus.fit_resample(X=df_res[['sents']], y=df_res[['relations']])
         df_res = pd.concat([X_resampled,y_resampled], axis=1)
+        df_res.groupby('relations').sample(n=500)
         
     return df_res
 

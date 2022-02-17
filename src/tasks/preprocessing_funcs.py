@@ -96,7 +96,7 @@ def add_entity_markers(row):
 def process_nyt_lines(lines):
     # TODO: Multi label: Select a single label or create 2 samples (same vec for 2 labels ...)
     ### TODO:Debug:Remove 
-    # data_path = r'D:\NLP\Relation Extraction\Datasets\New York Times Relation Extraction\valid.json'    
+    # data_path = r'D:\NLP\Relation Extraction\Datasets\New York Times Relation Extraction\train.json'    
     
     lst_dicts = [json.loads(line) for line in lines]
     df = pd.DataFrame(lst_dicts)
@@ -140,6 +140,17 @@ def preprocess_nyt(args):
     
     return df_train, df_test, rm
 
+def filter_nyt(df,balance):
+    from imblearn.under_sampling import RandomUnderSampler
+    
+    include_classes = ['/location/location/contains', '/people/person/place_lived', '/business/person/company']
+    df_res = df[df.relations.isin(include_classes)]
+    if balance:
+        rus = RandomUnderSampler()
+        X_resampled, y_resampled = rus.fit_resample(X=df_res[['sents']], y=df_res[['relations']])
+        df_res = pd.concat([X_resampled,y_resampled], axis=1)
+        
+    return df_res
 
 def process_text(text, mode='train'):
     sents, relations, comments, blanks = [], [], [], []
@@ -455,6 +466,9 @@ def load_dataloaders(args):
                 df_train, df_test, rm = preprocess_semeval2010_8(args) 
             elif args.task == 'nyt':
                 df_train, df_test, rm = preprocess_nyt(args) 
+                if args.filter_nyt:
+                    df_train = filter_nyt(df_train, balance=True)
+                    df_test  = filter_nyt(df_test, balance=False)
             else:
                 raise Exception(f'No preprocessing code for task: {args.task}')
         

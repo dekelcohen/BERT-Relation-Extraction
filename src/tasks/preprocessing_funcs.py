@@ -130,6 +130,10 @@ def preprocess_nyt(args):
     
     df_test = process_nyt_lines(lines)    
     
+    if args.filter_nyt:
+        df_train = filter_nyt(df_train, balance=True)
+        df_test  = filter_nyt(df_test, balance=False)
+        
     rm = Relations_Mapper(df_train['relations'])
     save_as_pickle('relations.pkl', rm)
     df_test['relations_id'] = df_test.progress_apply(lambda x: rm.rel2idx[x['relations']], axis=1)
@@ -468,9 +472,7 @@ def load_dataloaders(args):
                 df_train, df_test, rm = preprocess_semeval2010_8(args) 
             elif args.task == 'nyt':
                 df_train, df_test, rm = preprocess_nyt(args) 
-                if args.filter_nyt:
-                    df_train = filter_nyt(df_train, balance=True)
-                    df_test  = filter_nyt(df_test, balance=False)
+                
             else:
                 raise Exception(f'No preprocessing code for task: {args.task}')
         

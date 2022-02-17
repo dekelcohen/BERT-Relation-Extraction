@@ -10,7 +10,7 @@ import math
 import torch
 import torch.nn as nn
 from ..misc import save_as_pickle, load_pickle
-from seqeval.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score
 import logging
 from tqdm import tqdm
 

@@ -141,9 +141,11 @@ def preprocess_nyt(args):
     return df_train, df_test, rm
 
 def filter_nyt(df,balance):
+    
     from imblearn.under_sampling import RandomUnderSampler
     
     include_classes = ['/location/location/contains', '/people/person/place_lived', '/business/person/company']
+    print(f"Filter nyt to 3 classes. fix imbalance={balance}.\n Classes={include_classes}")
     df_res = df[df.relations.isin(include_classes)]
     if balance:
         rus = RandomUnderSampler()

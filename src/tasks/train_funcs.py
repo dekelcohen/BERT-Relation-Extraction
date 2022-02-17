@@ -97,9 +97,13 @@ def evaluate_results(net, test_loader, pad_id, cuda):
             acc += accuracy
     
     accuracy = acc/(i + 1)
+    def flatten(lst):
+        return [item for sublist in lst for item in sublist]
+    
+    print(f"out_labels: {out_labels}")
     results = {
         "accuracy": accuracy,
-        "set(true labels)-set(test labels)": set(true_labels) - set(out_labels),
+        "set(true labels)-set(test labels)": set(flatten(true_labels)) - set(flatten(out_labels)),
         "precision": precision_score(true_labels, out_labels),
         "recall": recall_score(true_labels, out_labels),
         "f1": f1_score(true_labels, out_labels)

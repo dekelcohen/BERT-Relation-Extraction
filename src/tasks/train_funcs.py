@@ -101,6 +101,7 @@ def evaluate_results(net, test_loader, pad_id, cuda):
         return [item for sublist in lst for item in sublist]
     
     print(f"out_labels: {out_labels}")
+    print(f"true_labels: {true_labels}")
     results = {
         "accuracy": accuracy,
         "set(true labels)-set(test labels)": set(flatten(true_labels)) - set(flatten(out_labels)),

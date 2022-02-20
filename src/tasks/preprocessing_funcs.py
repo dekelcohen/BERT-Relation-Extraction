@@ -144,7 +144,7 @@ def preprocess_nyt(args):
     
     return df_train, df_test, rm
 
-def filter_nyt(df,balance, subsample_n=200):
+def filter_nyt(df,balance, subsample_n=50):
     
     from imblearn.under_sampling import RandomUnderSampler
     

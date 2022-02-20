@@ -111,6 +111,22 @@ def process_nyt_lines(lines):
     df = df[['sents','relations']].drop_duplicates()
     return df
         
+def filter_nyt(df,balance, subsample_n = 0):
+    
+    from imblearn.under_sampling import RandomUnderSampler
+    
+    include_classes = ['/location/location/contains', '/people/person/place_lived', '/business/person/company']
+    print(f"Filter nyt to 3 classes. fix imbalance={balance}. subsample to {subsample_n}\n Classes={include_classes}")
+    df_res = df[df.relations.isin(include_classes)]
+    if balance:
+        rus = RandomUnderSampler()
+        X_resampled, y_resampled = rus.fit_resample(X=df_res[['sents']], y=df_res[['relations']])
+        df_res = pd.concat([X_resampled,y_resampled], axis=1)
+        
+    if subsample_n > 0:        
+        df_res = df_res.groupby('relations').sample(n=subsample_n)
+        
+    return df_res
         
 def preprocess_nyt(args):
     '''
@@ -122,6 +138,9 @@ def preprocess_nyt(args):
         lines = f.readlines()
     
     df_train = process_nyt_lines(lines)    
+    if args.filter_nyt > 0:
+        df_train = filter_nyt(df_train, balance=True,subsample_n = args.filter_nyt)        
+    print(f'train - samples: {df_train.shape[0]}, classes:\n{df_train.relations.value_counts()}')
     
     data_path = args.test_data #'./data/SemEval2010_task8_all_data/SemEval2010_task8_testing_keys/TEST_FILE_FULL.TXT'
     logger.info("Reading test file %s..." % data_path)
@@ -129,11 +148,12 @@ def preprocess_nyt(args):
         lines = f.readlines()
     
     df_test = process_nyt_lines(lines)    
-    
-    if args.filter_nyt:
-        df_train = filter_nyt(df_train, balance=True)
-        df_test  = filter_nyt(df_test, balance=False)
+    if args.filter_nyt > 0:
+        df_test = filter_nyt(df_test, balance=False,subsample_n = False)        
         
+    print(f'test - samples: {df_test.shape[0]}, classes:\n{df_test.relations.value_counts()}')
+    
+    
     rm = Relations_Mapper(df_train['relations'])
     save_as_pickle('relations.pkl', rm)
     df_test['relations_id'] = df_test.progress_apply(lambda x: rm.rel2idx[x['relations']], axis=1)
@@ -144,20 +164,6 @@ def preprocess_nyt(args):
     
     return df_train, df_test, rm
 
-def filter_nyt(df,balance, subsample_n=50):
-    
-    from imblearn.under_sampling import RandomUnderSampler
-    
-    include_classes = ['/location/location/contains', '/people/person/place_lived', '/business/person/company']
-    print(f"Filter nyt to 3 classes. fix imbalance={balance}. subsample to {subsample_n}\n Classes={include_classes}")
-    df_res = df[df.relations.isin(include_classes)]
-    if balance:
-        rus = RandomUnderSampler()
-        X_resampled, y_resampled = rus.fit_resample(X=df_res[['sents']], y=df_res[['relations']])
-        df_res = pd.concat([X_resampled,y_resampled], axis=1)
-        df_res.groupby('relations').sample(n=subsample_n)
-        
-    return df_res
 
 def process_text(text, mode='train'):
     sents, relations, comments, blanks = [], [], [], []

@@ -10,7 +10,7 @@ import math
 import torch
 import torch.nn as nn
 from ..misc import save_as_pickle, load_pickle
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, classification_report
 import logging
 from tqdm import tqdm
 
@@ -113,5 +113,6 @@ def evaluate_results(net, test_loader, pad_id, cuda):
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
     
+    logger.info("classification report\n%s", classification_report(true_labels, out_labels, target_names=None))
     return results
     

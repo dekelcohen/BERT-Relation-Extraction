@@ -105,9 +105,9 @@ def evaluate_results(net, test_loader, pad_id, cuda):
     results = {
         "accuracy": accuracy,
         "set(true labels)-set(test labels)": set(flatten(true_labels)) - set(flatten(out_labels)),
-        "precision": precision_score(true_labels, out_labels),
-        "recall": recall_score(true_labels, out_labels),
-        "f1": f1_score(true_labels, out_labels)
+        "precision": precision_score(true_labels, out_labels, average='macro'),
+        "recall": recall_score(true_labels, out_labels, average='macro'),
+        "f1": f1_score(true_labels, out_labels, average='macro')
     }
     logger.info("***** Eval results *****")
     for key in sorted(results.keys()):

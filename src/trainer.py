@@ -29,7 +29,7 @@ def train_and_fit(args):
         amp = None
     
     cuda = torch.cuda.is_available()
-    
+    logger.info("Started pre-training")
     train_loader = load_dataloaders(args)
     train_len = len(train_loader)
     logger.info("Loaded %d pre-training samples." % train_len)

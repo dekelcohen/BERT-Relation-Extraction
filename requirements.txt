@@ -1,2 +1,5 @@
 unidecode
+matplotlib
+pandas
 imblearn
+spacy

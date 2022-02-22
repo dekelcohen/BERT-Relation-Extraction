@@ -41,7 +41,8 @@ if __name__ == "__main__":
                                                                                     For BioBERT: 'bert-base-uncased' (biobert_v1.1_pubmed)")
     
     args = parser.parse_args()
-    
+    print('before train_and_fit')
+    logger.info('logger before train_and_fit')
     output = train_and_fit(args)
     
     '''

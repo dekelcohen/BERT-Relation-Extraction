@@ -416,6 +416,7 @@ def load_dataloaders(args, max_length=50000):
         
         D = []
         logger.info("Loading Spacy NLP...")
+        spacy.require_gpu()
         nlp = spacy.load("en_core_web_lg")
         
         for text_chunk in tqdm(text_chunks, total=num_chunks):

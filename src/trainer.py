@@ -105,7 +105,7 @@ def train_and_fit(args):
     
     losses_per_epoch, accuracy_per_epoch = load_results(args.model_no)
     
-    logger.info("Starting training process...")
+    logger.info(f"Starting training process... - sample count={len(train_loader)}")
     pad_id = tokenizer.pad_token_id
     mask_id = tokenizer.mask_token_id
     update_size = len(train_loader)//10
@@ -113,6 +113,8 @@ def train_and_fit(args):
         start_time = time.time()
         net.train(); total_loss = 0.0; losses_per_batch = []; total_acc = 0.0; lm_accuracy_per_batch = []
         for i, data in enumerate(train_loader, 0):
+            if (args.verbose):
+                logger.info(f"training sample {i}")
             x, masked_for_pred, e1_e2_start, _, blank_labels, _,_,_,_,_ = data
             masked_for_pred1 =  masked_for_pred
             masked_for_pred = masked_for_pred[(masked_for_pred != pad_id)]

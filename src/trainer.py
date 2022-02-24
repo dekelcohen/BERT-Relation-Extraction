@@ -35,12 +35,13 @@ def train_and_fit(args):
     logger.info("Loaded %d pre-training samples." % train_len)
     
     if args.model_no == 0:
-        from .model.BERT.modeling_bert import BertModel as Model
+        from .model.BERT.modeling_bert import BertModel as Model, setVerbose
         model = args.model_size #'bert-base-uncased'
         lower_case = True
         model_name = 'BERT'
         net = Model.from_pretrained(model, force_download=False, \
-                                model_size=args.model_size)
+                                model_size=args.model_size)        
+        setVerbose(args.verbose)
     elif args.model_no == 1:
         from .model.ALBERT.modeling_albert import AlbertModel as Model
         model = args.model_size #'albert-base-v2'

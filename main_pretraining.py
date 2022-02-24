@@ -40,6 +40,7 @@ if __name__ == "__main__":
                                                                                                 'albert-large-v2',\
                                                                                     For BioBERT: 'bert-base-uncased' (biobert_v1.1_pubmed)")
     
+    parser.add_argument("--verbose", type=int, default=0, help="1: log steps ; 0: log less")
     args = parser.parse_args()
     print('before train_and_fit')
     logger.info('logger before train_and_fit')

@@ -32,6 +32,11 @@ from .file_utils import add_start_docstrings
 
 logger = logging.getLogger(__name__)
 
+verbose = 0
+def setVerbose(val):
+    global verbose
+    verbose = val
+
 BERT_PRETRAINED_MODEL_ARCHIVE_MAP = {
     'bert-base-uncased': "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-pytorch_model.bin",
     'bert-large-uncased': "https://s3.amazonaws.com/models.huggingface.co/bert/bert-large-uncased-pytorch_model.bin",
@@ -369,10 +374,16 @@ class BertEncoder(nn.Module):
     def forward(self, hidden_states, attention_mask=None, head_mask=None, encoder_hidden_states=None, encoder_attention_mask=None):
         all_hidden_states = ()
         all_attentions = ()
+        if (verbose):
+            logger.info("BertEncoder.forward")
+        
         for i, layer_module in enumerate(self.layer):
             if self.output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
 
+            if (verbose):
+                logger.info("BertEncoder.layer_module")
+            
             layer_outputs = layer_module(hidden_states, attention_mask, head_mask[i], encoder_hidden_states, encoder_attention_mask)
             hidden_states = layer_outputs[0]
 

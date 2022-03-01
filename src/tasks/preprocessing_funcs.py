@@ -14,6 +14,7 @@ import unicodedata
 import pandas as pd
 import json
 from unidecode import unidecode
+from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
@@ -96,7 +97,7 @@ def add_entity_markers(row):
 def process_nyt_lines(lines):
     # TODO: Multi label: Select a single label or create 2 samples (same vec for 2 labels ...)
     ### TODO:Debug:Remove 
-    # data_path = r'D:\NLP\Relation Extraction\Datasets\New York Times Relation Extraction\train.json'    
+    # data_path = r'..\Datasets\New York Times Relation Extraction\train.json'    
     
     lst_dicts = [json.loads(line) for line in lines]
     df = pd.DataFrame(lst_dicts)
@@ -110,12 +111,13 @@ def process_nyt_lines(lines):
         
     df = df[['sents','relations']].drop_duplicates()
     return df
-        
-def filter_nyt(df,balance, subsample_n = 0):
+
+DEFAULT_INC_CLASSES = ['/location/location/contains', '/people/person/place_lived', '/business/person/company']        
+def filter_nyt(df,balance,include_classes = DEFAULT_INC_CLASSES, subsample_n = 0):
     
     from imblearn.under_sampling import RandomUnderSampler
     
-    include_classes = ['/location/location/contains', '/people/person/place_lived', '/business/person/company']
+    
     print(f"Filter nyt to 3 classes. fix imbalance={balance}. subsample to {subsample_n}\n Classes={include_classes}")
     df_res = df[df.relations.isin(include_classes)]
     if balance:
@@ -127,33 +129,8 @@ def filter_nyt(df,balance, subsample_n = 0):
         df_res = df_res.groupby('relations').sample(n=subsample_n)
         
     return df_res
-        
-def preprocess_nyt(args):
-    '''
-    Data preprocessing for New York Times Relation extraction dataset
-    '''
-    data_path = args.train_data #'./data/New York Times Relation Extraction/train.json'
-    logger.info("Reading training file %s..." % data_path)
-    with open(data_path, 'r', encoding='utf8') as f:
-        lines = f.readlines()
-    
-    df_train = process_nyt_lines(lines)    
-    if args.filter_nyt > 0:
-        df_train = filter_nyt(df_train, balance=True,subsample_n = args.filter_nyt)        
-    print(f'train - samples: {df_train.shape[0]}, classes:\n{df_train.relations.value_counts()}')
-    
-    data_path = args.test_data #'./data/SemEval2010_task8_all_data/SemEval2010_task8_testing_keys/TEST_FILE_FULL.TXT'
-    logger.info("Reading test file %s..." % data_path)
-    with open(data_path, 'r', encoding='utf8') as f:
-        lines = f.readlines()
-    
-    df_test = process_nyt_lines(lines)    
-    if args.filter_nyt > 0:
-        df_test = filter_nyt(df_test, balance=False,subsample_n = False)        
-        
-    print(f'test - samples: {df_test.shape[0]}, classes:\n{df_test.relations.value_counts()}')
-    
-    
+
+def create_relation_mapper(df_train,df_test):
     rm = Relations_Mapper(df_train['relations'])
     save_as_pickle('relations.pkl', rm)
     df_test['relations_id'] = df_test.progress_apply(lambda x: rm.rel2idx[x['relations']], axis=1)
@@ -164,6 +141,61 @@ def preprocess_nyt(args):
     
     return df_train, df_test, rm
 
+def create_nyt_train_test(args):
+    data_path = args.train_data #'./data/New York Times Relation Extraction/train.json'
+    logger.info("Reading training file %s..." % data_path)
+    with open(data_path, 'r', encoding='utf8') as f:
+        lines = f.readlines()
+    
+    df_train = process_nyt_lines(lines)    
+    if args.filter_nyt > 0:
+        df_train = filter_nyt(df_train, balance=True,subsample_n = args.filter_nyt)        
+    print(f'train - samples: {df_train.shape[0]}, classes:\n{df_train.relations.value_counts()}')
+    
+    data_path = args.test_data #'./data/New York Times Relation Extraction/valid.json'
+    logger.info("Reading test file %s..." % data_path)
+    with open(data_path, 'r', encoding='utf8') as f:
+        lines = f.readlines()
+    
+    df_test = process_nyt_lines(lines)    
+    if args.filter_nyt > 0:
+        df_test = filter_nyt(df_test, balance=False,subsample_n = False)        
+        
+    print(f'test - samples: {df_test.shape[0]}, classes:\n{df_test.relations.value_counts()}')
+    return df_train, df_test
+
+def preprocess_nyt(args):
+    '''
+    Data preprocessing for New York Times Relation extraction dataset
+    '''
+    df_train, df_test = create_nyt_train_test(args)
+    return create_relation_mapper(df_train,df_test)
+        
+
+def preprocess_news_nyt_mix(args):
+    '''
+    Mix train and test from our news and nyt
+    '''
+    df_train, df_test = create_nyt_train_test(args)
+    NEWS_PATH = r'..\Datasets\100-news\100-news.csv'
+    df_news = pd.read_csv(NEWS_PATH, sep='\t', encoding = 'utf8')
+    # Replace [\\E1] --> [/E1] --> trim spaces between markers and entity text
+    df_news['sents'] = df_news.NERed_par.str.replace('[\\','[/', regex=False).str.replace('[E1] ','[E1]', regex=False).str.replace('[E2] ','[E2]', regex=False)
+    df_news['sents'] = df_news['sents'].str.replace(' [/E1]','[/E1]', regex=False).str.replace(' [/E2]','[/E2]', regex=False)
+    # Rename cols
+    df_news = df_news.rename(columns={'REL' : 'relations'})
+    df_news.loc[df_news.relations == 'employs','relations'] = '/business/person/company'
+    df_news.loc[df_news.relations == 'working_at','relations'] = '/business/person/company'        
+    df_news = df_news[['sents','relations']]
+    df_news.loc[df_news.relations.isna(),'relations'] = 'no_relation'
+    
+    # Add employs - 91, working_at - 37 from News to test
+    df_test = df_news.loc[df_news.relations == '/business/person/company']
+        
+    na_train,na_test = train_test_split(df_news[df_news.relations == 'no_relation'],train_size = df_train.relations.value_counts()[0])
+    df_train = pd.concat([df_train, na_train], axis=0)
+    df_test = pd.concat([df_test, na_test], axis=0)
+    return create_relation_mapper(df_train,df_test)
 
 def process_text(text, mode='train'):
     sents, relations, comments, blanks = [], [], [], []
@@ -479,6 +511,8 @@ def load_dataloaders(args):
                 df_train, df_test, rm = preprocess_semeval2010_8(args) 
             elif args.task == 'nyt':
                 df_train, df_test, rm = preprocess_nyt(args) 
+            elif args.task == 'news_nyt_mix':
+                df_train, df_test, rm = preprocess_news_nyt_mix(args) 
                 
             else:
                 raise Exception(f'No preprocessing code for task: {args.task}')

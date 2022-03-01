@@ -497,7 +497,13 @@ def load_dataloaders(args):
     e2_id = tokenizer.convert_tokens_to_ids('[E2]')
     assert e1_id != e2_id != 1
     
-    if args.task == 'semeval' or args.task == 'nyt':
+    if args.task == 'fewrel':
+        df_train, df_test = preprocess_fewrel(args, do_lower_case=lower_case)
+        train_loader = fewrel_dataset(df_train, tokenizer=tokenizer, seq_pad_value=tokenizer.pad_token_id,
+                                      e1_id=e1_id, e2_id=e2_id)
+        train_length = len(train_loader)
+        test_loader, test_length = None, None
+    else: # semeval, nyt ...
         relations_path = './data/relations.pkl'
         train_path = './data/df_train.pkl'
         test_path = './data/df_test.pkl'
@@ -527,11 +533,6 @@ def load_dataloaders(args):
                                   num_workers=0, collate_fn=PS, pin_memory=False)
         test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, \
                                   num_workers=0, collate_fn=PS, pin_memory=False)
-    elif args.task == 'fewrel':
-        df_train, df_test = preprocess_fewrel(args, do_lower_case=lower_case)
-        train_loader = fewrel_dataset(df_train, tokenizer=tokenizer, seq_pad_value=tokenizer.pad_token_id,
-                                      e1_id=e1_id, e2_id=e2_id)
-        train_length = len(train_loader)
-        test_loader, test_length = None, None
+    
         
     return train_loader, test_loader, train_length, test_length

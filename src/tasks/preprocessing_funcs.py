@@ -177,7 +177,7 @@ def preprocess_news_nyt_mix(args):
     Mix train and test from our news and nyt
     '''
     df_train, df_test = create_nyt_train_test(args)
-    NEWS_PATH = r'..\Datasets\100-news\100-news.csv'
+    NEWS_PATH = r'../Datasets/100-news/100-news.csv'
     df_news = pd.read_csv(NEWS_PATH, sep='\t', encoding = 'utf8')
     # Replace [\\E1] --> [/E1] --> trim spaces between markers and entity text
     df_news['sents'] = df_news.NERed_par.str.replace('[\\','[/', regex=False).str.replace('[E1] ','[E1]', regex=False).str.replace('[E2] ','[E2]', regex=False)

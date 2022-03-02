@@ -312,6 +312,8 @@ class semeval_dataset(Dataset):
         self.df['input'] = self.df.progress_apply(lambda x: tokenizer.encode(x['sents']),\
                                                              axis=1)
         
+        print(f'tokenizer.max_len={tokenizer.max_len}. Filter out longer sequences')
+        self.df = self.df[self.df.input.str.len() < tokenizer.max_len] # TODO: Replace with max_len
         self.df['e1_e2_start'] = self.df.progress_apply(lambda x: get_e1e2_start(x['input'],\
                                                        e1_id=self.e1_id, e2_id=self.e2_id), axis=1)
         print("\nInvalid rows/total: %d/%d" % (df['e1_e2_start'].isnull().sum(), len(df)))

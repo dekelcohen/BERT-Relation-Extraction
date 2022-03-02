@@ -316,7 +316,8 @@ class semeval_dataset(Dataset):
         self.df = self.df[self.df.input.str.len() < tokenizer.max_len] # TODO: Replace with max_len
         self.df['e1_e2_start'] = self.df.progress_apply(lambda x: get_e1e2_start(x['input'],\
                                                        e1_id=self.e1_id, e2_id=self.e2_id), axis=1)
-        print("\nInvalid rows/total: %d/%d" % (df['e1_e2_start'].isnull().sum(), len(df)))
+        print("\nInvalid rows (filtered)/total: %d/%d" % (self.df['e1_e2_start'].isna().sum(), len(self.df)))
+        self.df = self.df[~self.df.e1_e2_start.isna()]
         self.df.dropna(axis=0, inplace=True)
     
     def __len__(self,):

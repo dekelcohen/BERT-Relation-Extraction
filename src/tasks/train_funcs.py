@@ -10,7 +10,8 @@ import math
 import torch
 import torch.nn as nn
 from ..misc import save_as_pickle, load_pickle
-from sklearn.metrics import precision_score, recall_score, f1_score, classification_report
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_score, recall_score, f1_score, classification_report, ConfusionMatrixDisplay
 import logging
 from tqdm import tqdm
 
@@ -114,5 +115,7 @@ def evaluate_results(net, test_loader, pad_id, cuda):
         logger.info("  %s = %s", key, str(results[key]))
     
     logger.info("classification report\n%s", classification_report(true_labels, out_labels, target_names=None))
+    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels)
+    plt.savefig(os.path.join("./data/" ,"test_confusion_matrix.png"))
     return results
     

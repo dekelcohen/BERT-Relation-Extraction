@@ -196,8 +196,10 @@ def preprocess_news_nyt_mix(args):
     df_news = df_news[['sents','relations']]
     df_news.loc[df_news.relations.isna(),'relations'] = 'no_relation'
     
+    # TODO:Debug: Restore news person-company ***************************************
+    
     # Add employs - 91, working_at - 37 from News to test
-    df_test = df_news.loc[df_news.relations == '/business/person/company']
+    #df_test = df_news.loc[df_news.relations == '/business/person/company']
         
     na_train,na_test = train_test_split(df_news[df_news.relations == 'no_relation'],train_size = df_train.relations.value_counts()[0])
     df_train = pd.concat([df_train, na_train], axis=0)

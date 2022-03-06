@@ -115,7 +115,7 @@ def evaluate_results(net, test_loader, pad_id, cuda, rm):
         logger.info("  %s = %s", key, str(results[key]))
     
     logger.info("classification report\n%s", classification_report(true_labels, out_labels, target_names=rm.get_classes()))
-    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels, labels=rm.get_classes())
+    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels, display_labels=rm.get_classes())
     plt.savefig(os.path.join("./data/" ,"test_confusion_matrix.png"))
     return results
     

@@ -9,7 +9,7 @@ import os
 import re
 import random
 import copy
-from collections import Counter
+from collections import Counter, OrderedDict
 import unicodedata
 import pandas as pd
 import json
@@ -142,6 +142,15 @@ def create_relation_mapper(df_train,df_test):
     return df_train, df_test, rm
 
 def create_nyt_train_test(args):
+    """
+    class D:
+        pass
+        
+    args = D()
+    args.train_data = r'../Datasets/New York Times Relation Extraction/train.json'
+    args.test_data = r'../Datasets/New York Times Relation Extraction/valid.json'        
+    args.filter_nyt =  1000
+    """
     data_path = args.train_data #'./data/New York Times Relation Extraction/train.json'
     logger.info("Reading training file %s..." % data_path)
     with open(data_path, 'r', encoding='utf8') as f:
@@ -265,6 +274,9 @@ class Relations_Mapper(object):
         
         for key, value in self.rel2idx.items():
             self.idx2rel[value] = key
+    def get_classes(self):
+        od = OrderedDict(sorted(self.idx2rel.items()))
+        return od.values()
 
 class Pad_Sequence():
     """
@@ -538,4 +550,4 @@ def load_dataloaders(args):
                                   num_workers=0, collate_fn=PS, pin_memory=False)
     
         
-    return train_loader, test_loader, train_length, test_length
+    return train_loader, test_loader, train_length, test_length, rm

@@ -30,7 +30,7 @@ def train_and_fit(args):
     
     cuda = torch.cuda.is_available()
     
-    train_loader, test_loader, train_len, test_len = load_dataloaders(args)
+    train_loader, test_loader, train_len, test_len, rm = load_dataloaders(args)
     logger.info("Loaded %d Training samples." % train_len)
     
     if args.model_no == 0:
@@ -174,7 +174,7 @@ def train_and_fit(args):
                 total_loss = 0.0; total_acc = 0.0
         
         scheduler.step()
-        results = evaluate_results(net, test_loader, pad_id, cuda)
+        results = evaluate_results(net, test_loader, pad_id, cuda, rm)
         losses_per_epoch.append(sum(losses_per_batch)/len(losses_per_batch))
         accuracy_per_epoch.append(sum(accuracy_per_batch)/len(accuracy_per_batch))
         test_f1_per_epoch.append(results['f1'])

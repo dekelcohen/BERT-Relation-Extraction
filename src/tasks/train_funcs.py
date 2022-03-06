@@ -74,7 +74,7 @@ def evaluate_(output, labels, ignore_idx):
 
     return acc, (o, l)
 
-def evaluate_results(net, test_loader, pad_id, cuda):
+def evaluate_results(net, test_loader, pad_id, cuda, rm):
     logger.info("Evaluating test samples...")
     acc = 0; out_labels = []; true_labels = []
     net.eval()
@@ -114,8 +114,8 @@ def evaluate_results(net, test_loader, pad_id, cuda):
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
     
-    logger.info("classification report\n%s", classification_report(true_labels, out_labels, target_names=None))
-    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels)
+    logger.info("classification report\n%s", classification_report(true_labels, out_labels, target_names=rm.get_classes()))
+    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels, labels=rm.get_classes())
     plt.savefig(os.path.join("./data/" ,"test_confusion_matrix.png"))
     return results
     

@@ -159,8 +159,7 @@ def create_nyt_train_test(args):
     df_train = process_nyt_lines(lines)    
     if args.filter_nyt > 0:
         df_train = filter_nyt(df_train, balance=True,subsample_n = args.filter_nyt)        
-    print(f'train - samples: {df_train.shape[0]}, classes:\n{df_train.relations.value_counts()}')
-    
+        
     data_path = args.test_data #'./data/New York Times Relation Extraction/valid.json'
     logger.info("Reading test file %s..." % data_path)
     with open(data_path, 'r', encoding='utf8') as f:
@@ -169,8 +168,7 @@ def create_nyt_train_test(args):
     df_test = process_nyt_lines(lines)    
     if args.filter_nyt > 0:
         df_test = filter_nyt(df_test, balance=False,subsample_n = False)        
-        
-    print(f'test - samples: {df_test.shape[0]}, classes:\n{df_test.relations.value_counts()}')
+            
     return df_train, df_test
 
 def preprocess_nyt(args):
@@ -267,7 +265,7 @@ class Relations_Mapper(object):
         
         logger.info("Mapping relations to IDs...")
         self.n_classes = 0
-        for relation in tqdm(relations):
+        for relation in tqdm(relations.unique()):
             if relation not in self.rel2idx.keys():
                 self.rel2idx[relation] = self.n_classes
                 self.n_classes += 1
@@ -276,7 +274,7 @@ class Relations_Mapper(object):
             self.idx2rel[value] = key
     def get_classes(self):
         od = OrderedDict(sorted(self.idx2rel.items()))
-        return od.values()
+        return list(od.values())
 
 class Pad_Sequence():
     """
@@ -537,6 +535,9 @@ def load_dataloaders(args):
                 
             else:
                 raise Exception(f'No preprocessing code for task: {args.task}')
+        
+        print(f'train - samples: {df_train.shape[0]}, classes:\n{df_train.relations.value_counts()}')
+        print(f'test - samples: {df_test.shape[0]}, classes:\n{df_test.relations.value_counts()}')
         
         train_set = semeval_dataset(df_train, tokenizer=tokenizer, e1_id=e1_id, e2_id=e2_id)
         test_set = semeval_dataset(df_test, tokenizer=tokenizer, e1_id=e1_id, e2_id=e2_id)

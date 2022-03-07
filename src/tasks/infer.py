@@ -32,7 +32,7 @@ def load_pickle(filename):
     return data
 
 class infer_from_trained(object):
-    def __init__(self, args=None, detect_entities=False):
+    def __init__(self, args=None, detect_entities=False, load_best=False):
         if args is None:
             self.args = load_pickle("args.pkl")
         else:
@@ -48,7 +48,7 @@ class infer_from_trained(object):
                                      "WORK_OF_ART", "LAW", "LANGUAGE", 'PER']
         
         logger.info("Loading tokenizer and model...")
-        from .train_funcs import load_state
+        from .train_funcs import load_stsaveate
         
         if self.args.model_no == 0:
             from ..model.BERT.modeling_bert import BertModel as Model
@@ -83,7 +83,7 @@ class infer_from_trained(object):
         self.net.resize_token_embeddings(len(self.tokenizer))
         if self.cuda:
             self.net.cuda()
-        start_epoch, best_pred, amp_checkpoint = load_state(self.net, None, None, self.args, load_best=False)
+        start_epoch, best_pred, amp_checkpoint = load_state(self.net, None, None, self.args, load_best=load_best)
         logger.info("Done!")
         
         self.e1_id = self.tokenizer.convert_tokens_to_ids('[E1]')

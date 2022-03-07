@@ -214,7 +214,12 @@ class infer_from_trained(object):
         print("Sentence: ", sentence)
         print("Predicted: ", self.rm.idx2rel[predicted].strip(), '\n')
         return predicted
-    
+
+    def infer_one_sentence_labels(self, sentence):
+        proba_t = self.infer_one_sentence_proba(sentence)
+        lst_proba = proba_t.tolist()[0]
+        return [[{'score': p, 'label': self.rm.idx2rel[index].strip()} for index,p in enumerate(lst_proba)]]
+
     def infer_sentence(self, sentence, detect_entities=False):
         if detect_entities:
             sentences = self.get_annotated_sents(sentence)

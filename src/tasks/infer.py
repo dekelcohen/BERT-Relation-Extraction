@@ -48,7 +48,7 @@ class infer_from_trained(object):
                                      "WORK_OF_ART", "LAW", "LANGUAGE", 'PER']
         
         logger.info("Loading tokenizer and model...")
-        from .train_funcs import load_stsaveate
+        from .train_funcs import load_state
         
         if self.args.model_no == 0:
             from ..model.BERT.modeling_bert import BertModel as Model

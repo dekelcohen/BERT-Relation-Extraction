@@ -5,6 +5,7 @@ Created on Mon Dec  2 17:40:16 2019
 
 @author: weetee
 """
+import pandas as pd
 from src.tasks.trainer import train_and_fit
 from src.tasks.infer import infer_from_trained, FewRel
 import logging
@@ -62,7 +63,7 @@ if __name__ == "__main__":
             if sent.lower() in ['quit', 'exit']:
                 break
             prediction = inferer.infer_one_sentence_labels(sent)
-            print(prediction)
+            print(pd.DataFrame(data=prediction[0]))
     
     if args.task == 'fewrel':
         fewrel = FewRel(args)

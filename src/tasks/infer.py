@@ -32,7 +32,7 @@ def load_pickle(filename):
     return data
 
 class infer_from_trained(object):
-    def __init__(self, args=None, detect_entities=False):
+    def __init__(self, args=None, detect_entities=False, load_best=False):
         if args is None:
             self.args = load_pickle("args.pkl")
         else:
@@ -83,7 +83,7 @@ class infer_from_trained(object):
         self.net.resize_token_embeddings(len(self.tokenizer))
         if self.cuda:
             self.net.cuda()
-        start_epoch, best_pred, amp_checkpoint = load_state(self.net, None, None, self.args, load_best=False)
+        start_epoch, best_pred, amp_checkpoint = load_state(self.net, None, None, self.args, load_best=load_best)
         logger.info("Done!")
         
         self.e1_id = self.tokenizer.convert_tokens_to_ids('[E1]')
@@ -186,29 +186,40 @@ class infer_from_trained(object):
         e1_e2_start = ([i for i, e in enumerate(x) if e == self.e1_id][0],\
                         [i for i, e in enumerate(x) if e == self.e2_id][0])
         return e1_e2_start
-    
-    def infer_one_sentence(self, sentence):
+
+    def infer_one_sentence_proba(self, sentence):
         self.net.eval()
-        tokenized = self.tokenizer.encode(sentence); #print(tokenized)
-        e1_e2_start = self.get_e1e2_start(tokenized); #print(e1_e2_start)
+        tokenized = self.tokenizer.encode(sentence);  # print(tokenized)
+        e1_e2_start = self.get_e1e2_start(tokenized);  # print(e1_e2_start)
         tokenized = torch.LongTensor(tokenized).unsqueeze(0)
         e1_e2_start = torch.LongTensor(e1_e2_start).unsqueeze(0)
         attention_mask = (tokenized != self.pad_id).float()
         token_type_ids = torch.zeros((tokenized.shape[0], tokenized.shape[1])).long()
-        
+
         if self.cuda:
             tokenized = tokenized.cuda()
             attention_mask = attention_mask.cuda()
             token_type_ids = token_type_ids.cuda()
-        
+
         with torch.no_grad():
-            classification_logits = self.net(tokenized, token_type_ids=token_type_ids, attention_mask=attention_mask, Q=None,\
-                                        e1_e2_start=e1_e2_start)
-            predicted = torch.softmax(classification_logits, dim=1).max(1)[1].item()
+            classification_logits = self.net(tokenized, token_type_ids=token_type_ids, attention_mask=attention_mask,
+                                             Q=None, \
+                                             e1_e2_start=e1_e2_start)
+            proba = torch.softmax(classification_logits, dim=1)
+        return proba
+
+    def infer_one_sentence(self, sentence):
+        proba = self.infer_one_sentence_proba(sentence)
+        predicted = proba.max(1)[1].item()
         print("Sentence: ", sentence)
         print("Predicted: ", self.rm.idx2rel[predicted].strip(), '\n')
         return predicted
-    
+
+    def infer_one_sentence_labels(self, sentence):
+        proba_t = self.infer_one_sentence_proba(sentence)
+        lst_proba = proba_t.tolist()[0]
+        return [[{'score': p, 'label': self.rm.idx2rel[index].strip()} for index,p in enumerate(lst_proba)]]
+
     def infer_sentence(self, sentence, detect_entities=False):
         if detect_entities:
             sentences = self.get_annotated_sents(sentence)

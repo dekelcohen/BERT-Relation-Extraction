@@ -28,9 +28,16 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger('__file__')
 
+nrm_types = {'ORGANIZATION' : 'ORG',
+             'ORG' : 'ORG',
+             'LOCATION' : 'LOC',
+             'LOC' : 'LOC',
+             'PERSON' : 'PER',
+             'PER' : 'PER'}
 
 def add_entity_markers(row):
     dct_em = Counter([ item['text'] for item in row.entityMentions ])
+    dct_types = { item['text'] : nrm_types[item['label']] for item in row.entityMentions }
     row.em1Text = unidecode(row.em1Text)
     row.em2Text = unidecode(row.em2Text)
     e1_num_occur = dct_em[row.em1Text]
@@ -80,10 +87,10 @@ def add_entity_markers(row):
     sent = row.sents
     def replace_other():        
         nonlocal sent
-        sent = sent[:idx_other] + f'[E{oth_no}]{other}[/E{oth_no}]' + sent[idx_other+len(other):] 
+        sent = sent[:idx_other] + f'[E{oth_no}] @* {dct_types[other]} * {other}[/E{oth_no}]' + sent[idx_other+len(other):] 
     def replace_anchor():
         nonlocal sent
-        sent = sent[:idx_anchor] + f'[E{anc_no}]{anchor}[/E{anc_no}]' + sent[idx_anchor+len(anchor):] 
+        sent = sent[:idx_anchor] + f'[E{anc_no}] @* {dct_types[anchor]} * {anchor}[/E{anc_no}]' + sent[idx_anchor+len(anchor):] 
         
     # Must first add markers to the right most entity - not to push indexes
     if idx_other > idx_anchor:
@@ -178,6 +185,10 @@ def preprocess_nyt(args):
     df_train, df_test = create_nyt_train_test(args)
     return create_relation_mapper(df_train,df_test)
         
+def news_add_entity_markers(row):
+    sents = row.sents.replace('[E1] ',f'[E1]@* {row.e1_label} *')
+    sents = sents.replace('[E2] ',f'[E2]@* {row.e2_label} *')
+    return sents
 
 def preprocess_news_nyt_mix(args):
     '''
@@ -186,9 +197,13 @@ def preprocess_news_nyt_mix(args):
     df_train, df_test = create_nyt_train_test(args)
     NEWS_PATH = r'../Datasets/100-news/100-news.csv'
     df_news = pd.read_csv(NEWS_PATH, sep='\t', encoding = 'utf8')
+    df_news = df_news.replace({'e1_label': nrm_types, 'e2_label': nrm_types})
     # Replace [\\E1] --> [/E1] --> trim spaces between markers and entity text
-    df_news['sents'] = df_news.NERed_par.str.replace('[\\','[/', regex=False).str.replace('[E1] ','[E1]', regex=False).str.replace('[E2] ','[E2]', regex=False)
+    
+    df_news['sents'] = df_news.NERed_par.str.replace('[\\','[/', regex=False)
     df_news['sents'] = df_news['sents'].str.replace(' [/E1]','[/E1]', regex=False).str.replace(' [/E2]','[/E2]', regex=False)
+    df_news['sents'] = df_news.apply(news_add_entity_markers, axis=1)    
+    
     # Rename cols
     df_news = df_news.rename(columns={'REL' : 'relations'})
     df_news.loc[df_news.relations == 'employs','relations'] = '/business/person/company'

@@ -484,7 +484,7 @@ def load_dataloaders(args):
         model_name = 'BERT'
     elif args.model_no == 1:
         from ..model.ALBERT.tokenization_albert import AlbertTokenizer as Tokenizer
-        model = 'albert-base-v2'
+        model = args.model_size #'albert-base-v2'
         lower_case = True
         model_name = 'ALBERT'
     elif args.model_no == 2:

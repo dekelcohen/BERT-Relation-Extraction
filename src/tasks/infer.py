@@ -188,6 +188,9 @@ class infer_from_trained(object):
         return e1_e2_start
 
     def get_one_sent_output(self, sentence):
+        """
+        Return a sentence embeddings - the embs of the concat of the 2 entities markers        
+        """
         self.net.eval()
         tokenized = self.tokenizer.encode(sentence);  # print(tokenized)
         e1_e2_start = self.get_e1e2_start(tokenized);  # print(e1_e2_start)
@@ -208,6 +211,10 @@ class infer_from_trained(object):
         return output
                 
     def infer_one_sentence_proba(self, sentence):
+        """
+        predict_proba for a single sentence - return the proba distribution of classes        
+
+        """
         classification_logits = self.get_one_sent_output(sentence)
         with torch.no_grad():
             proba = torch.softmax(classification_logits, dim=1)

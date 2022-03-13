@@ -32,7 +32,7 @@ def load_pickle(filename):
     return data
 
 class infer_from_trained(object):
-    def __init__(self, args=None, detect_entities=False, load_best=False):
+    def __init__(self, args=None, detect_entities=False, load_best=False, task='classification'):
         if args is None:
             self.args = load_pickle("args.pkl")
         else:
@@ -57,7 +57,7 @@ class infer_from_trained(object):
             model_name = 'BERT'
             self.net = Model.from_pretrained(model, force_download=False, \
                                          model_size=args.model_size,\
-                                         task='classification', n_classes_=self.args.num_classes)
+                                         task=task, n_classes_=self.args.num_classes)
         elif self.args.model_no == 1:
             from ..model.ALBERT.modeling_albert import AlbertModel as Model
             model = args.model_size #'albert-base-v2'
@@ -65,7 +65,7 @@ class infer_from_trained(object):
             model_name = 'ALBERT'
             self.net = Model.from_pretrained(model, force_download=False, \
                                          model_size=args.model_size,\
-                                         task='classification', n_classes_=self.args.num_classes)
+                                         task=task, n_classes_=self.args.num_classes)
         elif args.model_no == 2: # BioBert
             from ..model.BERT.modeling_bert import BertModel, BertConfig
             model = 'bert-base-uncased'
@@ -76,7 +76,7 @@ class infer_from_trained(object):
                                                  config=config,
                                                  force_download=False, \
                                                  model_size='bert-base-uncased',
-                                                 task='classification',\
+                                                 task=task,\
                                                  n_classes_=self.args.num_classes)
         
         self.tokenizer = load_pickle("%s_tokenizer.pkl" % model_name)
@@ -187,7 +187,7 @@ class infer_from_trained(object):
                         [i for i, e in enumerate(x) if e == self.e2_id][0])
         return e1_e2_start
 
-    def infer_one_sentence_proba(self, sentence):
+    def get_one_sent_output(self, sentence):
         self.net.eval()
         tokenized = self.tokenizer.encode(sentence);  # print(tokenized)
         e1_e2_start = self.get_e1e2_start(tokenized);  # print(e1_e2_start)
@@ -202,9 +202,14 @@ class infer_from_trained(object):
             token_type_ids = token_type_ids.cuda()
 
         with torch.no_grad():
-            classification_logits = self.net(tokenized, token_type_ids=token_type_ids, attention_mask=attention_mask,
+            output = self.net(tokenized, token_type_ids=token_type_ids, attention_mask=attention_mask,
                                              Q=None, \
                                              e1_e2_start=e1_e2_start)
+        return output
+                
+    def infer_one_sentence_proba(self, sentence):
+        classification_logits = self.get_one_sent_output(sentence)
+        with torch.no_grad():
             proba = torch.softmax(classification_logits, dim=1)
         return proba
 

@@ -114,7 +114,7 @@ def evaluate_results(net, test_loader, pad_id, cuda, rm):
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
         
-    inc_labels = list(set(true_labels))
+    inc_labels = list(map(int, list(set(true_labels))))
     target_names = [rm.get_classes()[i] for i in inc_labels]
     logger.info("classification report\n%s", classification_report(true_labels, out_labels,labels = inc_labels, target_names=target_names))
     ConfusionMatrixDisplay.from_predictions(true_labels, out_labels, display_labels=rm.get_classes())

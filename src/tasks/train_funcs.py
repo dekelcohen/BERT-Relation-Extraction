@@ -102,7 +102,7 @@ def evaluate_results(net, test_loader, pad_id, cuda, rm):
         return [item for sublist in lst for item in sublist]
     
     #print(f"out_labels: {out_labels}")
-    print(f"true_labels: {true_labels}")
+    #print(f"true_labels: {true_labels}")
     results = {
         "accuracy": accuracy,
         "set(true labels)-set(test labels)": set(flatten(true_labels)) - set(flatten(out_labels)),
@@ -114,10 +114,10 @@ def evaluate_results(net, test_loader, pad_id, cuda, rm):
     for key in sorted(results.keys()):
         logger.info("  %s = %s", key, str(results[key]))
         
-    inc_labels = list(map(int, list(set(true_labels))))
+    inc_labels = list(map(int, sorted(list(set(true_labels)))))
     target_names = [rm.get_classes()[i] for i in inc_labels]
     logger.info("classification report\n%s", classification_report(true_labels, out_labels,labels = inc_labels, target_names=target_names))
-    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels, display_labels=rm.get_classes())
+    ConfusionMatrixDisplay.from_predictions(true_labels, out_labels,labels = inc_labels, display_labels=target_names)
     plt.savefig(os.path.join("./data/" ,"test_confusion_matrix.png"))
     return results
     

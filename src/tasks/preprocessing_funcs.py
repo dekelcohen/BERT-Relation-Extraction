@@ -220,7 +220,7 @@ def preprocess_news_nyt_mix(args):
     # Add employs - 91, working_at - 37 from News to test
     df_test = df_news.loc[df_news.relations == '/business/person/company']
         
-    na_train,na_test = train_test_split(df_news[df_news.relations == 'no_relation'],train_size = df_train.relations.value_counts()[0])
+    na_train,na_test = train_test_split(df_news[df_news.relations == 'no_relation'],train_size = 1850) #df_train.relations.value_counts()[0] 
     df_train = pd.concat([df_train, na_train], axis=0)
     df_test = pd.concat([df_test, na_test], axis=0)
     return create_relation_mapper(df_train,df_test)

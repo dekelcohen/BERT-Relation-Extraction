@@ -28,12 +28,16 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger('__file__')
 
+TYPED_ENTITIES = False
 nrm_types = {'ORGANIZATION' : 'ORG',
              'ORG' : 'ORG',
              'LOCATION' : 'LOC',
              'LOC' : 'LOC',
              'PERSON' : 'PER',
              'PER' : 'PER'}
+
+def ent_type_marker(ent_type):
+    return f'@* {ent_type} *' if TYPED_ENTITIES else ''
 
 def add_entity_markers(row):
     dct_em = Counter([ item['text'] for item in row.entityMentions ])
@@ -87,10 +91,10 @@ def add_entity_markers(row):
     sent = row.sents
     def replace_other():        
         nonlocal sent
-        sent = sent[:idx_other] + f'[E{oth_no}] @* {dct_types[other]} * {other}[/E{oth_no}]' + sent[idx_other+len(other):] 
+        sent = sent[:idx_other] + f'[E{oth_no}] {ent_type_marker(dct_types[other])} {other}[/E{oth_no}]' + sent[idx_other+len(other):] 
     def replace_anchor():
         nonlocal sent
-        sent = sent[:idx_anchor] + f'[E{anc_no}] @* {dct_types[anchor]} * {anchor}[/E{anc_no}]' + sent[idx_anchor+len(anchor):] 
+        sent = sent[:idx_anchor] + f'[E{anc_no}] {ent_type_marker(dct_types[anchor])} {anchor}[/E{anc_no}]' + sent[idx_anchor+len(anchor):] 
         
     # Must first add markers to the right most entity - not to push indexes
     if idx_other > idx_anchor:
@@ -186,8 +190,8 @@ def preprocess_nyt(args):
     return create_relation_mapper(df_train,df_test)
         
 def news_add_entity_markers(row):
-    sents = row.sents.replace('[E1] ',f'[E1]@* {row.e1_label} *')
-    sents = sents.replace('[E2] ',f'[E2]@* {row.e2_label} *')
+    sents = row.sents.replace('[E1] ',f'[E1]{ent_type_marker(row.e1_label)}')
+    sents = sents.replace('[E2] ',f'[E2]{ent_type_marker(row.e2_label)}')
     return sents
 
 def preprocess_news_nyt_mix(args):

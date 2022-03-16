@@ -101,13 +101,14 @@ def evaluate_results(net, test_loader, pad_id, cuda, rm):
     def flatten(lst):
         return [item for sublist in lst for item in sublist]
     
-    #print(f"out_labels: {out_labels}")
-    #print(f"true_labels: {true_labels}")
+    
     true_labels =  list(map(int,true_labels))
     out_labels =  list(map(int,out_labels))
+    print(f"out_labels: {out_labels}")
+    #print(f"true_labels: {true_labels}")
     results = {
         "accuracy": accuracy,
-        "set(true labels)-set(test labels)": set(flatten(true_labels)) - set(flatten(out_labels)),
+        "set(true labels)-set(test labels)": set(true_labels) - set(out_labels),
         "precision": precision_score(true_labels, out_labels, average='macro'),
         "recall": recall_score(true_labels, out_labels, average='macro'),
         "f1": f1_score(true_labels, out_labels, average='macro')

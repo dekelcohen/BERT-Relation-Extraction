@@ -104,7 +104,7 @@ def evaluate_results(net, test_loader, pad_id, cuda, rm):
     
     true_labels =  list(map(int,true_labels))
     out_labels =  list(map(int,out_labels))
-    print(f"out_labels: {out_labels}")
+    #print(f"out_labels: {out_labels}")
     #print(f"true_labels: {true_labels}")
     results = {
         "accuracy": accuracy,

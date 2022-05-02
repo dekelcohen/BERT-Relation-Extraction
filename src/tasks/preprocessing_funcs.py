@@ -537,6 +537,7 @@ def load_dataloaders(args):
                                       e1_id=e1_id, e2_id=e2_id)
         train_length = len(train_loader)
         test_loader, test_length = None, None
+        rm = None
     else: # semeval, nyt ...
         relations_path = './data/relations.pkl'
         train_path = './data/df_train.pkl'

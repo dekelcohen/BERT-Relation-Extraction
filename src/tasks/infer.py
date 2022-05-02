@@ -315,7 +315,7 @@ class FewRel(object):
             del checkpoint, pretrained_dict, model_dict
         
         logger.info("Loading Fewrel dataloaders...")
-        self.train_loader, _, self.train_length, _ = load_dataloaders(args)
+        self.train_loader, _, self.train_length, _, _ = load_dataloaders(args)
         
     def evaluate(self):
         counts, hits = 0, 0

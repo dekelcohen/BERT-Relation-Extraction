@@ -425,7 +425,7 @@ def preprocess_fewrel(args, do_lower_case=True):
     df_train = pd.DataFrame(data={'sents': train_sents, 'labels': train_labels})
     df_test = pd.DataFrame(data={'sents': test_sents, 'labels': test_labels})
     
-    rm = Relations_Mapper(list(df_train['labels'].unique()))
+    rm = Relations_Mapper(df_train['labels'])
     save_as_pickle('relations.pkl', rm)
     df_train['labels'] = df_train.progress_apply(lambda x: rm.rel2idx[x['labels']], axis=1)
     
